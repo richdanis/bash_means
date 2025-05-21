@@ -1,6 +1,6 @@
 #!/bin/bash
 
-num_samples=10
+num_samples=30
 num_dims=2
 
 # accumulate random points in a flattened array
@@ -17,8 +17,11 @@ k=2
 # initialize k means as random data points
 for ((i=0;i<$k;i++));
 do
-    # TODO: make sure that no 2 means are initialized to the same datapoint
-    mean_index[i]=$RANDOM%$num_samples
+    # make sure that no 2 means are initialized to the same datapoint
+    index=$RANDOM%$num_samples
+    while [[ ${hm[$index]} ]]; do index=$RANDOM%$num_samples; done
+    mean_index[i]=$index
+    hm[$index]=1
     for ((d=0;d<$num_dims;d++));
     do
         means[i*$num_dims+d]=${data[${mean_index[i]}*$num_dims+d]}
@@ -30,7 +33,7 @@ echo ${data[@]}
 echo "Means"
 echo ${means[@]}
 
-num_iterations=10
+num_iterations=1
 for ((i=0;i<$num_iterations;i++));
 do
     # TODO: first compute the assignments
@@ -41,11 +44,24 @@ do
     do
         # initialize min_distance and assignment
         min_distance=-1
-        assignment=-1
         for ((l=0;l<$k;l++));
         do
-            distance[k]=0
+            distance[l]=0
+            for ((d=0;d<$num_dims;d++));
+            do
+                diff=$(( ${means[l+d]}-${data[j+d]} ))
+                distance[l]+=$(( $diff*$diff ))
+            done
+            if (( $min_distance==-1 )); then
+                min_distance=${distance[l]};
+                assignment=$l;
+            elif (( ${distance[l]}<$min_distance )); then
+                min_distance=${distance[l]};
+                assignment=$l;
+            fi
         done
+        echo $assignment
+        
     done
     echo "Iteration ${i}:"
     echo "Means:"
