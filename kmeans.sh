@@ -4,6 +4,7 @@ num_samples=10
 num_dims=2
 
 # accumulate random points in a flattened array
+# TODO: use a Z table to sample from normal distributions
 for ((i=0;i<$num_samples;i++));
 do 
     for ((d=0;d<$num_dims;d++)); 
@@ -29,10 +30,24 @@ echo ${data[@]}
 echo "Means"
 echo ${means[@]}
 
-num_iterations=1000
+num_iterations=10
 for ((i=0;i<$num_iterations;i++));
 do
     # TODO: first compute the assignments
     # TODO: then update the means
     # TODO: print the whole thing as it happens
+    declare -a num_assignments=( $(for ((j=0;j<$k;j++)); do echo 0; done) )
+    for ((j=0;j<$num_samples;j++));
+    do
+        # initialize min_distance and assignment
+        min_distance=-1
+        assignment=-1
+        for ((l=0;l<$k;l++));
+        do
+            distance[k]=0
+        done
+    done
+    echo "Iteration ${i}:"
+    echo "Means:"
+    echo ${means[@]}
 done
