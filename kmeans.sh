@@ -1,6 +1,6 @@
 #!/bin/bash
 
-num_samples=30
+num_samples=10
 num_dims=2
 
 # accumulate random points in a flattened array
@@ -33,10 +33,11 @@ echo ${data[@]}
 echo "Means"
 echo ${means[@]}
 
+scale=8
+
 num_iterations=1
 for ((i=0;i<$num_iterations;i++));
 do
-    # TODO: first compute the assignments
     # TODO: then update the means
     # TODO: print the whole thing as it happens
     declare -a num_assignments=( $(for ((j=0;j<$k;j++)); do echo 0; done) )
@@ -49,19 +50,22 @@ do
             distance[l]=0
             for ((d=0;d<$num_dims;d++));
             do
-                diff=$(( ${means[l+d]}-${data[j+d]} ))
-                distance[l]+=$(( $diff*$diff ))
+                if (( $(echo "${means[l*$num_dims+d]}>${data[j*$num_dims+d]}" | bc) )); then
+                    distance[l]=$(echo "scale=$scale;${distance[l]}+${means[l*$num_dims+d]}-${data[j*$num_dims+d]}" | bc)
+                else
+                    distance[l]=$(echo "scale=$scale;${distance[l]}+${data[j*$num_dims+d]}-${means[l*$num_dims+d]}" | bc)
+                fi
             done
-            if (( $min_distance==-1 )); then
+            echo ${distance[l]}
+            if (( $(echo "$min_distance==-1" | bc) )); then
                 min_distance=${distance[l]};
                 assignment=$l;
-            elif (( ${distance[l]}<$min_distance )); then
+            elif (( $(echo "${distance[l]}<$min_distance" | bc) )); then
                 min_distance=${distance[l]};
                 assignment=$l;
             fi
         done
-        echo $assignment
-        
+        num_assignments[$assignment]+=1
     done
     echo "Iteration ${i}:"
     echo "Means:"
