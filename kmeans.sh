@@ -1,6 +1,6 @@
 #!/bin/bash
 
-num_samples=10
+num_samples=500
 num_dims=2
 
 # accumulate random points in a flattened array
@@ -35,11 +35,17 @@ echo ${means[@]}
 
 scale=8
 
-num_iterations=1
+num_iterations=10
 for ((i=0;i<$num_iterations;i++));
 do
-    # TODO: then update the means
-    # TODO: print the whole thing as it happens
+    # initialize new means
+    for ((j=0;j<$k;j++));
+    do
+        for ((l=0;l<$num_dims;l++));
+        do
+            new_means[j*$num_dims+l]=0
+        done
+    done
     declare -a num_assignments=( $(for ((j=0;j<$k;j++)); do echo 0; done) )
     for ((j=0;j<$num_samples;j++));
     do
@@ -56,7 +62,6 @@ do
                     distance[l]=$(echo "scale=$scale;${distance[l]}+${data[j*$num_dims+d]}-${means[l*$num_dims+d]}" | bc)
                 fi
             done
-            echo ${distance[l]}
             if (( $(echo "$min_distance==-1" | bc) )); then
                 min_distance=${distance[l]};
                 assignment=$l;
@@ -65,7 +70,21 @@ do
                 assignment=$l;
             fi
         done
-        num_assignments[$assignment]+=1
+        # assign and aggregate to new means
+        num_assignments[$assignment]=$(echo "scale=$scale;${num_assignments[$assignment]}+1" | bc)
+        for ((d=0;d<$num_dims;d++));
+        do
+            new_means[$assignment*$num_dims+d]=$(echo "scale=$scale;${new_means[$assignment*$num_dims+d]}+${data[j*$num_dims+d]}" | bc)
+        done
+    done
+    # divide by number of assignments to get new centers
+    echo ${num_assignments[@]}
+    for ((l=0;l<$k;l++));
+    do
+        for ((d=0;d<$num_dims;d++));
+        do
+            means[l*$num_dims+d]=$(echo "scale=$scale;${new_means[l*$num_dims+d]}/${num_assignments[l]}" | bc)
+        done
     done
     echo "Iteration ${i}:"
     echo "Means:"
